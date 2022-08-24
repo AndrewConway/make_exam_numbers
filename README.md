@@ -38,7 +38,7 @@ This will create a 100 line file `prefix_.txt` containing a list of the codes.
 
 As a more complex example, the following command:
 ```bash
-3 6 S0:1000 P0:400 S1:500 P1:200
+./target/release/make_exam_numbers 3 6 S0:1000 P0:400 S1:500 P1:200
 ```
 will make codes with 6 digits (not counting the prefixes), with 1000 codes starting with `S0`
 in the file `prefix_S0.txt`, 400 starting with `P0` in the file `prefix_P0.txt`, 500 starting
