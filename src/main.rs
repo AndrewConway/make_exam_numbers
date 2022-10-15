@@ -8,9 +8,10 @@
 
 
 use std::fs::File;
-use std::io::Write;
+use std::io::{BufRead, Write};
 use std::num::ParseIntError;
 use std::ops::Range;
+use std::path::PathBuf;
 use std::str::FromStr;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
@@ -34,6 +35,13 @@ struct Parameters {
     /// The number of digits in the code
     #[clap(value_parser)]
     digits : usize,
+
+    /// Existing numbers that you want to avoid
+    ///
+    /// This is typically used when you used this program to create some numbers, and then decided you want some more,
+    /// and want to avoid the old numbers.
+    #[clap(long,value_parser)]
+    existing : Vec<PathBuf>,
 
     /// How many codes you want, possibly with prefixes.
     ///
@@ -72,7 +80,7 @@ fn default_wanted() -> Parameters {
 
 
 fn main() -> std::io::Result<()> {
-    let args = Parameters::parse();
+    let args : Parameters = Parameters::parse();
     let prng = if let Some(seed) = args.seed { rand_chacha::ChaCha8Rng::seed_from_u64(seed) } else { rand_chacha::ChaCha8Rng::from_entropy() };
     let upper_end_of_range = (10u64).pow(args.digits as u32);
     let mut generator = GenerateCodes {
@@ -81,6 +89,14 @@ fn main() -> std::io::Result<()> {
         num_digits: args.digits,
         used: vec![]
     };
+    for path in &args.existing {
+        let start_count = generator.used.len();
+        let f = File::open(path)?;
+        for line in std::io::BufReader::new(f).lines() {
+            generator.used.push(line?);
+        }
+        println!("Read file {} containing {} entries",path.to_string_lossy(),generator.used.len()-start_count);
+    }
     for p in &args.prefixes {
         println!("Processing prefix {} trying to find {}.",p.prefix,p.number);
         let mut file = File::create(format!("prefix_{}.txt",p.prefix))?;
